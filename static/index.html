@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitLab Merge Request Commits Viewer</title>
+  <link rel="stylesheet" href="/vendor/diff2html/diff2html.min.css" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="header-brand">
+        <span class="brand-title">GitLab Merge Request Commits Viewer</span>
+        <span id="repo-name" class="repo-badge">Loading...</span>
+        <span id="current-branch" class="branch-badge">-</span>
+      </div>
+
+      <div class="header-controls">
+        <label class="control-group" for="mr-select">
+          <span class="control-label">MR</span>
+          <select id="mr-select" aria-label="Merge Request">
+            <option value="">ローカルブランチ比較</option>
+          </select>
+        </label>
+        <span id="mr-status" class="status-pill" hidden></span>
+
+        <label class="control-group" for="base-branch-select">
+          <span class="control-label">Base</span>
+          <select id="base-branch-select" aria-label="Base branch"></select>
+        </label>
+
+        <span class="range-arrow" aria-hidden="true">→</span>
+
+        <label class="control-group" for="head-branch-select">
+          <span class="control-label">Head</span>
+          <select id="head-branch-select" aria-label="Head branch"></select>
+        </label>
+
+        <button id="reload-btn" type="button" class="btn btn-secondary" title="再読み込み">
+          Reload
+        </button>
+      </div>
+    </header>
+
+    <div id="global-error" class="error-banner" hidden></div>
+
+    <main class="workspace-layout">
+      <aside id="commit-menu-pane" class="commit-menu-pane">
+        <div class="pane-header">
+          <h2 class="pane-title">Commits</h2>
+          <span id="review-progress" class="progress-badge">0 / 0 Reviewed</span>
+        </div>
+        <div class="shortcut-hint">
+          <span><kbd>j</kbd>/<kbd>k</kbd> 移動</span>
+          <span><kbd>r</kbd> 確認済み</span>
+        </div>
+        <ul id="commit-list" class="commit-list" role="listbox" aria-label="Commit list"></ul>
+      </aside>
+
+      <section id="main-review-pane" class="main-review-pane">
+        <div id="commit-summary" class="commit-summary-card">
+          <p class="empty-state">コミットを選択すると詳細が表示されます。</p>
+        </div>
+
+        <div id="diff-section" class="diff-section">
+          <div id="diff-toolbar" class="diff-toolbar">
+            <div class="diff-toolbar-left">
+              <span class="pane-title">Changes</span>
+              <span id="diff-file-count" class="muted-text">0 files</span>
+            </div>
+            <div class="diff-toolbar-right">
+              <div class="segmented-control" role="group" aria-label="Diff view mode">
+                <button id="mode-split-btn" type="button" class="seg-btn active" data-mode="side-by-side">
+                  Split
+                </button>
+                <button id="mode-unified-btn" type="button" class="seg-btn" data-mode="line-by-line">
+                  Unified
+                </button>
+              </div>
+              <label class="checkbox-label" for="ignore-whitespace-checkbox">
+                <input id="ignore-whitespace-checkbox" type="checkbox" />
+                <span>空白無視 (-w)</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="changed-files" class="changed-files-bar"></div>
+          <div id="diff-viewer" class="diff-viewer"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/vendor/diff2html/diff2html-ui.min.js"></script>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

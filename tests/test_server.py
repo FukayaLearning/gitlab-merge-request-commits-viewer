@@ -86,6 +86,30 @@ class ServerApiTests(unittest.TestCase):
             overridden = parse_args(["--port", "8765"])
             self.assertEqual(overridden.port, 8765)
 
+    def test_serves_default_static_ui_assets(self) -> None:
+        real_server = create_server(repo_path=self.repo, port=0, host="127.0.0.1")
+        port = real_server.server_address[1]
+        thread = threading.Thread(target=real_server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with urlopen(f"http://127.0.0.1:{port}/", timeout=5) as resp:
+                html = resp.read().decode("utf-8")
+                self.assertEqual(resp.status, 200)
+                self.assertIn("GitLab Merge Request Commits Viewer", html)
+                self.assertIn('id="mr-select"', html)
+
+            with urlopen(f"http://127.0.0.1:{port}/app.js", timeout=5) as resp:
+                js = resp.read().decode("utf-8")
+                self.assertEqual(resp.status, 200)
+                self.assertIn("/api/mrs", js)
+
+            with urlopen(f"http://127.0.0.1:{port}/style.css", timeout=5) as resp:
+                self.assertEqual(resp.status, 200)
+        finally:
+            real_server.shutdown()
+            real_server.server_close()
+            thread.join(timeout=2)
+
 
 if __name__ == "__main__":
     unittest.main()
