@@ -39,7 +39,7 @@
 
 ## 5. ドキュメント・トークン権限設定手順の整備
 
-- [ ] 5.1 [S03-03-01, S03-03-02] `README.md` にプロジェクト概要、動作要件、起動方法、キーボードショートカット、Git Trailers 形式、テスト手順、および GitLab Personal/Project Access Token の発行手順・最小権限スコープ（`read_api`）・環境変数設定手順・フォールバック仕様を記載する（検証: `openspec validate gitlab-mr-commits-viewer --strict`）
+- [x] 5.1 [S03-03-01, S03-03-02] `README.md` にプロジェクト概要、動作要件、起動方法、キーボードショートカット、Git Trailers 形式、テスト手順、および GitLab Personal/Project Access Token の発行手順・最小権限スコープ（`read_api`）・環境変数設定手順・フォールバック仕様を記載する（検証: `openspec validate gitlab-mr-commits-viewer --strict`）
 
 ## Workflow follow-up
 
