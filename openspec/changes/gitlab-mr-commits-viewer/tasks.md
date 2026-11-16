@@ -24,7 +24,7 @@
 ## 2. GitLab REST API 連携サービス
 
 - [x] 2.1 [S02-01-01, S02-01-02] `viewer_backend/gitlab_service.py` に `origin` リモート URL（HTTPS/SSH・サブグループ対応）からの GitLab ベース URL・プロジェクトパス抽出と環境変数上書きロジックを実装し、`tests/test_gitlab_service.py` で検証する（検証: `python3 -m unittest tests/test_gitlab_service.py -v`）
-- [ ] 2.2 [S02-02-01, S02-02-02, S02-03-01, S04-02] `viewer_backend/gitlab_service.py` に `urllib.request` を用いた GitLab REST API v4 オープン MR 一覧取得（`PRIVATE-TOKEN` ヘッダー対応・トークン非露出・自動フォールバック）を実装し、`tests/test_gitlab_service.py` に HTTP モックテストを追加する（検証: `python3 -m unittest tests/test_gitlab_service.py -v`）
+- [x] 2.2 [S02-02-01, S02-02-02, S02-03-01, S04-02] `viewer_backend/gitlab_service.py` に `urllib.request` を用いた GitLab REST API v4 オープン MR 一覧取得（`PRIVATE-TOKEN` ヘッダー対応・トークン非露出・自動フォールバック）を実装し、`tests/test_gitlab_service.py` に HTTP モックテストを追加する（検証: `python3 -m unittest tests/test_gitlab_service.py -v`）
 
 ## 3. Git リポジトリ検査サービスと HTTP/API サーバー
 
