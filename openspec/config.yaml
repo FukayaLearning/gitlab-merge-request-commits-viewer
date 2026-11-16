@@ -1,0 +1,32 @@
+schema: usdm
+
+# Project context (optional)
+# Add only constraints that should guide OpenSpec artifacts and workflows.
+context: |
+  すべてのOpenSpecアーティファクト（proposal.md, usdm.md, specs/**/spec.md, design.md, tasks.md）は日本語で記述すること。
+
+# Per-artifact rules (optional)
+rules:
+  proposal:
+    - "## Why セクションは50文字以上1000文字以内で背景・目的を簡潔に記述すること"
+  usdm:
+    - "affordd-prj/usdm-schema のマークダウン形式定義（H1〜H6の固定見出し階層、全角山括弧＜＞、□□□ラベル）を厳守すること"
+  specs:
+    - "openspec validate --strict を通過させるため、各 Requirement 本文は500文字以内に収め、文中に必ず半角大文字の SHALL または MUST（例: 〜しなければならない（SHALL）。）を含めること"
+    - "各 Scenario には必ず **WHEN**（または **GIVEN**）と **THEN** の両方を含めること"
+    - "### Requirement: の見出しには変更固有の連番（R01等）を含めず恒久的な名前とし、直下の行に **USDM**: R01-01 のメタデータ行として要求IDを記録すること"
+  tasks:
+    - "各チェックボックス項目（サブタスク）は「1サブタスク ＝ 1コミット」の粒度（変更ファイル数1〜5個程度、単独でビルド・テストが通る最小単位）に分解すること"
+    - "フォーマッタ、Linter自動修正、マイグレーション生成、sed等による一括置換、パッケージ追加など「コマンド実行による機械的な変更」は、必ず手書きのロジック変更とは別の独立した1サブタスク（＝1コミット）として切り出すこと"
+
+# Per-operation guidance (optional)
+operations:
+  apply:
+    guidance:
+      - "タスクのチェックボックス1項目（1サブタスク）の遂行都度、単独でビルドおよび既存テストがパスする状態（Green State）を確認し、tasks.md のチェック更新（- [ ] → - [x]）を含めて必ず「1サブタスク ＝ 1コミット」でコミットすること（複数サブタスクを1つのコミットにまとめることは厳禁）"
+      - "フォーマッタ、Linter自動修正、マイグレーション生成、sed等による一括置換、パッケージ追加などの機械的変更は、手書きのロジック変更とは完全に分離して独立した1コミットとして切り出すこと"
+      - "コミットメッセージは1行目を `<type>(<scope>): <サブタスクの要約>` とし、本文に `Why: <目的・背景>` と `What: <変更内容>`、末尾のGit Trailersに `Issue: #<Issue番号>` / `Task: <サブタスクの識別子または名称>` / `Verification: <確認コマンド>` / `Executed-Command: <機械的変更時の実行コマンド全文、手動変更時は \"manual\">` を厳守すること"
+      - "tasks.md のすべてのチェックボックス項目の実装・コミットが完了したら、プロジェクト全体のテストを実行してすべてパスすることを確認すること"
+  archive:
+    guidance:
+      - "アーカイブ実行時、完了して閉じるタスク（- [x]）に対応する usdm.md 内の各仕様（Sxx-yy-zz）について、要件のレビュー・実装・テストの完了状態に応じたUSDM仕様ラベルのチェック（□□□ → ■□□ レビュー済み / ■■□ 実装済み / ■■■ テスト済み）を入れて usdm.md を更新してからアーカイブすること"
