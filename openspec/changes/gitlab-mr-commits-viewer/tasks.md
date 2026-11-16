@@ -34,7 +34,7 @@
 
 ## 4. フロントエンドアセット・3ペインレビュー Web UI
 
-- [ ] 4.1 [S03-02-04] （機械的変更）`static/vendor/diff2html/` に Diff2Html のローカルアセット（`diff2html.min.css`, `diff2html-ui.min.js`）を配置する（検証: `ls -la static/vendor/diff2html/` および `python3 -m unittest discover -s tests -v`）
+- [x] 4.1 [S03-02-04] （機械的変更）`static/vendor/diff2html/` に Diff2Html のローカルアセット（`diff2html.min.css`, `diff2html-ui.min.js`）を配置する（検証: `ls -la static/vendor/diff2html/` および `python3 -m unittest discover -s tests -v`）
 - [ ] 4.2 [S03-02-01, S03-02-02, S03-02-03, S03-02-04] `static/index.html`、`static/style.css`、`static/app.js` に 3ペイン構成レビュー UI（MR/ブランチ選択、コミット一覧・バッジ、`j`/`k`/`r` ショートカット、`localStorage` 永続化、サマリカード、Split/Unified・空白無視切替）を実装し、`tests/test_server.py` に静的アセット配信テストを追加する（検証: `python3 -m unittest discover -s tests -v`）
 
 ## 5. ドキュメント・トークン権限設定手順の整備
