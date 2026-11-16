@@ -28,7 +28,7 @@
 
 ## 3. Git リポジトリ検査サービスと HTTP/API サーバー
 
-- [ ] 3.1 [S01-01-01, S01-01-02, S04-01] `viewer_backend/git_service.py` にリポジトリ検証、`get_repo_info()`、および `validate_git_ref` / `validate_commit_sha` バリデーションを実装し、`tests/test_git_service.py` を追加する（検証: `python3 -m unittest tests/test_git_service.py -v`）
+- [x] 3.1 [S01-01-01, S01-01-02, S04-01] `viewer_backend/git_service.py` にリポジトリ検証、`get_repo_info()`、および `validate_git_ref` / `validate_commit_sha` バリデーションを実装し、`tests/test_git_service.py` を追加する（検証: `python3 -m unittest tests/test_git_service.py -v`）
 - [ ] 3.2 [S01-02-01, S01-03-01, S01-03-02] `viewer_backend/git_service.py` に `get_commits()`、`get_commit_diff()`（`-w` 対応）、および `gitlab_service` 連携の `list_mrs()` を実装し、`tests/test_git_service.py` にテストを追加する（検証: `python3 -m unittest tests/test_git_service.py -v`）
 - [ ] 3.3 [S03-01-01, S03-01-02] `server.py` にゼロ依存 `ThreadingHTTPServer`（`/api/repo-info`, `/api/mrs`, `/api/commits`, `/api/commits/{sha}/diff`, 静的ファイル配信, CLI引数・環境変数対応）と `tests/test_server.py` を実装する（検証: `python3 -m unittest tests/test_server.py -v`）
 
