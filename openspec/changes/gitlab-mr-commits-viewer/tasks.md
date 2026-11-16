@@ -19,7 +19,7 @@
 
 ## 1. バックエンド基盤・Git Trailers パーサー
 
-- [ ] 1.1 [S01-02-02, S01-02-03] `viewer_backend/__init__.py`、`viewer_backend/parser.py`（Git Trailers 抽出・OpenSpec 仕様ID抽出・変更種別判定）および `tests/test_parser.py` を実装する（検証: `python3 -m unittest tests/test_parser.py -v`）
+- [x] 1.1 [S01-02-02, S01-02-03] `viewer_backend/__init__.py`、`viewer_backend/parser.py`（Git Trailers 抽出・OpenSpec 仕様ID抽出・変更種別判定）および `tests/test_parser.py` を実装する（検証: `python3 -m unittest tests/test_parser.py -v`）
 
 ## 2. GitLab REST API 連携サービス
 
