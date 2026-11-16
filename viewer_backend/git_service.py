@@ -5,7 +5,10 @@ from __future__ import annotations
 import re
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Mapping
+
+from viewer_backend.gitlab_service import fetch_open_merge_requests
+from viewer_backend.parser import parse_commit_metadata
 
 _VALID_REF_RE = re.compile(r"^[A-Za-z0-9._/~^@{}-]+$")
 _VALID_SHA_RE = re.compile(r"^[0-9a-fA-F]{4,40}$")
@@ -118,4 +121,139 @@ class GitService:
             "current_branch": current_branch,
             "default_base": default_base,
             "branches": branches,
+        }
+
+    def _get_origin_remote_url(self) -> str | None:
+        proc = self._run_git(["remote", "get-url", "origin"])
+        if proc.returncode != 0:
+            return None
+        url = proc.stdout.strip()
+        return url or None
+
+    def list_mrs(
+        self,
+        env: Mapping[str, str] | None = None,
+        opener: Callable[..., Any] | None = None,
+    ) -> dict[str, Any]:
+        """Return open GitLab Merge Requests via REST API, falling back to local branches."""
+        repo_info = self.get_repo_info()
+        default_base = repo_info["default_base"]
+        default_head = repo_info["current_branch"] or "HEAD"
+        remote_url = self._get_origin_remote_url()
+        return fetch_open_merge_requests(
+            remote_url=remote_url,
+            default_base=default_base,
+            default_head=default_head,
+            env=env,
+            opener=opener,
+        )
+
+    def get_commits(self, base: str, head: str = "HEAD") -> list[dict[str, Any]]:
+        """Return chronological commits in base..head with parsed Git Trailers."""
+        self._ensure_git_repo()
+        safe_base = validate_git_ref(base)
+        safe_head = validate_git_ref(head)
+
+        proc = self._run_git(
+            [
+                "log",
+                "--reverse",
+                "--format=%H%x1f%h%x1f%s%x1f%b%x1f%an%x1f%aI%x1e",
+                f"{safe_base}..{safe_head}",
+            ]
+        )
+        if proc.returncode != 0:
+            detail = proc.stderr.strip() or f"Failed to list commits for {safe_base}..{safe_head}"
+            if _is_invalid_ref_stderr(detail):
+                raise ValueError(detail)
+            raise GitCommandError(detail)
+
+        commits: list[dict[str, Any]] = []
+        for raw_record in proc.stdout.split("\x1e"):
+            record = raw_record.strip("\r\n")
+            if not record:
+                continue
+            parts = record.split("\x1f")
+            if len(parts) < 6:
+                continue
+            sha, short_sha, subject, body, author, date = parts[:6]
+            metadata = parse_commit_metadata(subject, body)
+            commits.append(
+                {
+                    "sha": sha.strip(),
+                    "short_sha": short_sha.strip(),
+                    "subject": subject.strip(),
+                    "body": body.strip(),
+                    "author": author.strip(),
+                    "date": date.strip(),
+                    "trailers": metadata["trailers"],
+                    "task_ids": metadata["task_ids"],
+                    "change_type": metadata["change_type"],
+                }
+            )
+        return commits
+
+    def get_commit_diff(self, sha: str, ignore_whitespace: bool = False) -> dict[str, Any]:
+        """Return changed file stats and unified diff for a specific commit SHA."""
+        self._ensure_git_repo()
+        safe_sha = validate_commit_sha(sha)
+
+        status_proc = self._run_git(["show", "--name-status", "--format=", safe_sha])
+        if status_proc.returncode != 0:
+            detail = status_proc.stderr.strip() or f"Failed to inspect commit {safe_sha}"
+            if _is_invalid_ref_stderr(detail):
+                raise ValueError(detail)
+            raise GitCommandError(detail)
+
+        status_map: dict[str, str] = {}
+        for line in status_proc.stdout.splitlines():
+            if not line.strip():
+                continue
+            parts = line.split("\t")
+            if len(parts) >= 2:
+                status_code = parts[0].strip()
+                file_path = parts[-1].strip()
+                status_map[file_path] = status_code
+
+        numstat_proc = self._run_git(["show", "--numstat", "--format=", safe_sha])
+        if numstat_proc.returncode != 0:
+            detail = numstat_proc.stderr.strip() or f"Failed to get numstat for {safe_sha}"
+            raise GitCommandError(detail)
+
+        files: list[dict[str, Any]] = []
+        for line in numstat_proc.stdout.splitlines():
+            if not line.strip():
+                continue
+            parts = line.split("\t")
+            if len(parts) < 3:
+                continue
+            raw_add, raw_del, file_path = parts[0], parts[1], parts[-1]
+            is_binary = raw_add == "-" or raw_del == "-"
+            additions = 0 if is_binary else int(raw_add)
+            deletions = 0 if is_binary else int(raw_del)
+            files.append(
+                {
+                    "path": file_path,
+                    "status": status_map.get(file_path, "M"),
+                    "additions": additions,
+                    "deletions": deletions,
+                    "binary": is_binary,
+                }
+            )
+
+        patch_args = ["show", "--patch", "--format="]
+        if ignore_whitespace:
+            patch_args.append("-w")
+        patch_args.append(safe_sha)
+
+        patch_proc = self._run_git(patch_args)
+        if patch_proc.returncode != 0:
+            detail = patch_proc.stderr.strip() or f"Failed to get diff for {safe_sha}"
+            raise GitCommandError(detail)
+
+        return {
+            "sha": safe_sha,
+            "ignore_whitespace": ignore_whitespace,
+            "files": files,
+            "diff": patch_proc.stdout,
         }

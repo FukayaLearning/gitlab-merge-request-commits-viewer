@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 import tempfile
 import unittest
@@ -93,6 +94,93 @@ class GitServiceValidationAndRepoInfoTests(unittest.TestCase):
             missing = Path(tmp) / "does-not-exist"
             with self.assertRaises(GitRepositoryError):
                 GitService(missing).get_repo_info()
+
+
+class _FakeHttpResponse:
+    def __init__(self, body: str) -> None:
+        self._bytes = body.encode("utf-8")
+
+    def read(self) -> bytes:
+        return self._bytes
+
+    def __enter__(self) -> _FakeHttpResponse:
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        return False
+
+
+class GitServiceCommitsDiffAndMrTests(unittest.TestCase):
+    def test_get_commits_returns_chronological_commits_with_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = create_test_repo(Path(tmp))
+            (repo / "fmt.py").write_text("x = 1\n", encoding="utf-8")
+            _git(repo, "add", "fmt.py")
+            _git(
+                repo,
+                "commit",
+                "-m",
+                "style: format code",
+                "-m",
+                "Why: フォーマット統一\nWhat: fmt.py整形\n\nTask: 2.1 [S01-02-01]\nExecuted-Command: ruff format .",
+            )
+
+            service = GitService(repo)
+            commits = service.get_commits(base="main", head="feat/demo")
+            self.assertEqual(len(commits), 2)
+            self.assertEqual(commits[0]["subject"], "feat(app): add hello script")
+            self.assertEqual(commits[0]["change_type"], "manual")
+            self.assertEqual(commits[0]["task_ids"], ["S01-01-01"])
+            self.assertEqual(commits[1]["subject"], "style: format code")
+            self.assertEqual(commits[1]["change_type"], "command")
+            self.assertEqual(commits[1]["trailers"]["executed_command"], "ruff format .")
+
+    def test_get_commit_diff_and_ignore_whitespace(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = create_test_repo(Path(tmp))
+            (repo / "app.py").write_text("print('hello')   \n", encoding="utf-8")
+            _git(repo, "add", "app.py")
+            _git(repo, "commit", "-m", "style: trailing spaces")
+
+            service = GitService(repo)
+            commits = service.get_commits(base="main", head="feat/demo")
+            ws_sha = commits[-1]["sha"]
+
+            normal_diff = service.get_commit_diff(ws_sha, ignore_whitespace=False)
+            self.assertEqual(normal_diff["files"][0]["path"], "app.py")
+            self.assertEqual(normal_diff["files"][0]["status"], "M")
+            self.assertIn("print('hello')   ", normal_diff["diff"])
+
+            ws_diff = service.get_commit_diff(ws_sha, ignore_whitespace=True)
+            self.assertTrue(ws_diff["ignore_whitespace"])
+            self.assertNotIn("+print('hello')   ", ws_diff["diff"])
+
+    def test_list_mrs_uses_origin_remote_and_falls_back_when_unset(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = create_test_repo(Path(tmp))
+            service = GitService(repo)
+
+            fallback_res = service.list_mrs(env={})
+            self.assertTrue(fallback_res["fallback"])
+            self.assertEqual(fallback_res["default_base"], "main")
+            self.assertEqual(fallback_res["default_head"], "feat/demo")
+
+            _git(repo, "remote", "add", "origin", "git@gitlab.com:team/sample-repo.git")
+            mr_payload = [
+                {
+                    "iid": 5,
+                    "title": "Demo MR",
+                    "source_branch": "feat/demo",
+                    "target_branch": "main",
+                    "web_url": "https://gitlab.com/team/sample-repo/-/merge_requests/5",
+                }
+            ]
+            ok_res = service.list_mrs(
+                env={},
+                opener=lambda req, timeout=5.0: _FakeHttpResponse(json.dumps(mr_payload)),
+            )
+            self.assertFalse(ok_res["fallback"])
+            self.assertEqual(ok_res["mrs"][0]["iid"], 5)
 
 
 if __name__ == "__main__":
